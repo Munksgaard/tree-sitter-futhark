@@ -1,0 +1,123 @@
+================================================================================
+Type bindings
+================================================================================
+
+type foo = i64
+
+type foo = []a
+
+type foo 'a = []a
+
+type foo 'a [n] = [n]a
+
+type foo 'f = #a #b | #c #d #e f
+
+--------------------------------------------------------------------------------
+
+(source_file
+  (dec
+    (type_bind
+      (identifier)
+      (type
+        (qualid
+          (identifier)))))
+  (dec
+    (type_bind
+      (identifier)
+      (type
+        (array_type
+          (type
+            (qualid
+              (identifier)))))))
+  (dec
+    (type_bind
+      (identifier)
+      (type_param
+        (identifier))
+      (type
+        (array_type
+          (type
+            (qualid
+              (identifier)))))))
+  (dec
+    (type_bind
+      (identifier)
+      (type_param
+        (identifier))
+      (type_param
+        (identifier))
+      (type
+        (array_type
+          (dim
+            (qualid
+              (identifier)))
+          (type
+            (qualid
+              (identifier)))))))
+  (dec
+    (type_bind
+      (identifier)
+      (type_param
+        (identifier))
+      (type
+        (type_application
+          (type
+            (sum_type
+              (constructor
+                (identifier))))
+          (type_arg
+            (type
+              (type_application
+                (type
+                  (sum_type
+                    (constructor
+                      (identifier))
+                    (constructor
+                      (identifier))))
+                (type_arg
+                  (type
+                    (type_application
+                      (type
+                        (sum_type
+                          (constructor
+                            (identifier))))
+                      (type_arg
+                        (type
+                          (type_application
+                            (type
+                              (sum_type
+                                (constructor
+                                  (identifier))))
+                            (type_arg
+                              (type
+                                (qualid
+                                  (identifier))))))))))))))))))
+
+================================================================================
+Val bindings
+================================================================================
+
+def foo () = 1i64
+
+--------------------------------------------------------------------------------
+
+(source_file
+  (dec
+    (val_bind
+      (identifier)
+      (pat)
+      (exp (atom (literal (int_type)))))))
+
+================================================================================
+Val bindings 2
+================================================================================
+
+def foo = 1i64
+
+--------------------------------------------------------------------------------
+
+(source_file
+  (dec
+    (val_bind
+      (identifier)
+      (exp (atom (literal (int_type)))))))
