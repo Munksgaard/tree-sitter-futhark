@@ -119,5 +119,29 @@ def foo = 1i64
 (source_file
   (dec
     (val_bind
-      (identifier)
+      (val_bind1
+        (identifier))
       (exp (atom (literal (int_type)))))))
+
+================================================================================
+Val bindings 3
+================================================================================
+
+def a + b = a
+
+--------------------------------------------------------------------------------
+
+(source_file
+  (dec
+    (val_bind
+      (val_bind2
+        (pat
+          (identifier))
+        (binop
+          (opstartchar))
+        (pat
+          (identifier)))
+      (exp
+        (atom
+          (qualid
+            (identifier)))))))

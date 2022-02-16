@@ -31,7 +31,7 @@ module.exports = grammar({
       $.identifier
     ),
 
-    opstartchar: $ => prec.left(choice(
+    opstartchar: $ => choice(
       '+',
       '-',
       '*',
@@ -44,7 +44,7 @@ module.exports = grammar({
       '|',
       '&',
       '^'
-    )),
+    ),
 
     opchar: $ => choice(
       $.opstartchar,
@@ -222,22 +222,25 @@ module.exports = grammar({
     val_bind: $ => seq(
       choice('def', 'entry', 'let'),
       choice(
-        seq(choice($.identifier, seq('(', $.binop, ')')),
-            repeat($.type_param),
-            repeat($.pat)),
-        seq($.pat, $.binop, $.pat),
+        prec.dynamic(1, $.val_bind1),
+        prec.dynamic(2, $.val_bind2),
       ),
       optional(seq(':', $.type)),
       '=',
-      $.exp
+      $.exp,
     ),
-      // seq(choice('def', 'entry', 'let'),
-      //     $.pat,
-      //     $.binop,
-      //     $.pat,
-      //     optional(seq(':', $.type)),
-      //     '=',
-      //     $.exp)
+
+    val_bind1: $ => seq(
+      choice($.identifier, seq('(', $.binop, ')')),
+      repeat($.type_param),
+      repeat($.pat),
+    ),
+
+    val_bind2: $ => seq(
+      $.pat,
+      $.binop,
+      $.pat,
+    ),
 
     type_bind: $ => seq(
       'type',
@@ -277,13 +280,13 @@ module.exports = grammar({
       seq('(', '.', '[', $.index, repeat(seq(',', $.index)), ']', ')'),
     )),
 
-    exp: $ => prec.left(choice(
+    exp: $ => choice(
       $.atom,
       seq($.exp, $.qualbinop, $.exp),
       prec.left(seq($.exp, $.exp)),
-      seq('!', $.exp),
-      seq('-', $.exp),
-      seq($.constructor, repeat(prec.left($.exp))),
+      prec.left(2, seq('!', $.exp)),
+      prec.left(2, seq('-', $.exp)),
+      prec.left(seq($.constructor, repeat($.exp))),
       // seq($.exp, ':', $.type),
       // seq($.exp, ':>', $.type),
       // seq($.exp, optional(seq('..', $.exp)), '...', $.exp),
@@ -300,7 +303,7 @@ module.exports = grammar({
       // seq($.exp, 'with', '[', $.index, repeat(seq(',', $.index)), ']', '=', $.exp),
       // seq($.exp, 'with', $.fieldid, repeat(seq('.', $.fieldid)), '=', $.exp),
       // seq('match', $.exp, repeat1(seq('case', $.pat, '->', $.exp))),
-    )),
+    ),
 
     index: $ => $.literal,
 
