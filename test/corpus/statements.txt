@@ -152,3 +152,35 @@ def a + b = a
         (atom
           (qualid
             (identifier)))))))
+
+================================================================================
+Constructors 1
+================================================================================
+
+def foo = #bar a b c
+
+--------------------------------------------------------------------------------
+
+(source_file
+  (dec
+    (val_bind
+      (val_bind1
+        (identifier))
+      (exp
+        (exp
+          (exp
+            (exp
+              (constructor
+                (identifier)))
+            (exp
+              (atom
+                (qualid
+                  (identifier)))))
+          (exp
+            (atom
+              (qualid
+                (identifier)))))
+        (exp
+          (atom
+            (qualid
+              (identifier))))))))

@@ -280,14 +280,14 @@ module.exports = grammar({
       seq('(', '.', '[', $.index, repeat(seq(',', $.index)), ']', ')'),
     )),
 
-    exp: $ => prec.left(choice(
+    exp: $ => choice(
       $.atom,
-      seq($.exp, $.qualbinop, $.exp),
-      prec.left(seq($.exp, $.exp)),
-      prec.left(3, seq('!', $.exp)),
-      prec.left(3, seq('-', $.exp)),
-      // prec.left(seq($.constructor, repeat($.exp))),
-      // seq($.exp, ':', $.type),
+      prec.left(2, seq($.exp, $.qualbinop, $.exp)),
+      prec.left(2, seq($.exp, $.exp)),
+      prec(3, seq('!', $.exp)),
+      prec(3, seq('-', $.exp)),
+      prec.left(1, seq($.constructor, repeat($.exp))),
+      // prec(0, seq($.exp, ':', $.type)),
       // seq($.exp, ':>', $.type),
       // seq($.exp, optional(seq('..', $.exp)), '...', $.exp),
       // seq($.exp, optional(seq('..', $.exp)), '..<', $.exp),
@@ -303,7 +303,7 @@ module.exports = grammar({
       // seq($.exp, 'with', '[', $.index, repeat(seq(',', $.index)), ']', '=', $.exp),
       // seq($.exp, 'with', $.fieldid, repeat(seq('.', $.fieldid)), '=', $.exp),
       // seq('match', $.exp, repeat1(seq('case', $.pat, '->', $.exp))),
-    )),
+    ),
 
     index: $ => $.literal,
 
