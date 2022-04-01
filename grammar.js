@@ -286,7 +286,7 @@ module.exports = grammar({
       prec.left(2, seq($.exp, $.exp)),
       prec(3, seq('!', $.exp)),
       prec(3, seq('-', $.exp)),
-      prec.left(1, seq($.constructor, repeat($.exp))),
+      seq($.constructor, prec.left(1, repeat($.exp))),
       // prec(0, seq($.exp, ':', $.type)),
       // seq($.exp, ':>', $.type),
       // seq($.exp, optional(seq('..', $.exp)), '...', $.exp),

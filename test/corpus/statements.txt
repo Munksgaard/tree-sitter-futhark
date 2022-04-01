@@ -184,3 +184,27 @@ def foo = #bar a b c
           (atom
             (qualid
               (identifier))))))))
+
+================================================================================
+Type ascription
+================================================================================
+
+def foo = a b : i64
+
+--------------------------------------------------------------------------------
+
+(source_file
+  (dec
+    (val_bind
+      (val_bind1
+        (identifier))
+      (exp
+        (exp
+          (atom
+            (qualid
+              (identifier))))
+        (exp
+          (atom
+            (qualid
+              (identifier)))))))
+  (ERROR))
