@@ -280,6 +280,11 @@ module.exports = grammar({
       seq('(', '.', '[', $.index, repeat(seq(',', $.index)), ']', ')'),
     )),
 
+    type_op: $ => choice(
+      ':',
+      ':>',
+    ),
+
     exp: $ => choice(
       $.atom,
       prec.left(4, seq($.exp, $.qualbinop, $.exp)),
@@ -287,8 +292,7 @@ module.exports = grammar({
       prec.left(5, seq('!', $.exp)),
       prec.left(6, seq('-', $.exp)),
       prec.left(3, seq($.constructor, repeat($.exp))),
-      prec.left(2, seq($.exp, ':', $.type)),
-      // seq($.exp, ':>', $.type),
+      prec.left(2, seq($.exp, $.type_op, $.type)),
       // seq($.exp, optional(seq('..', $.exp)), '...', $.exp),
       // seq($.exp, optional(seq('..', $.exp)), '..<', $.exp),
       // seq($.exp, optional(seq('..', $.exp)), '..>', $.exp),

@@ -208,6 +208,35 @@ def foo = a b : i64
             (atom
               (qualid
                 (identifier)))))
+        (type_op)
+        (type
+          (qualid
+            (identifier)))))))
+
+================================================================================
+Type coercion
+================================================================================
+
+def foo = a b :> i64
+
+--------------------------------------------------------------------------------
+
+(source_file
+  (dec
+    (val_bind
+      (val_bind1
+        (identifier))
+      (exp
+        (exp
+          (exp
+            (atom
+              (qualid
+                (identifier))))
+          (exp
+            (atom
+              (qualid
+                (identifier)))))
+        (type_op)
         (type
           (qualid
             (identifier)))))))
