@@ -282,12 +282,12 @@ module.exports = grammar({
 
     exp: $ => choice(
       $.atom,
-      prec.left(2, seq($.exp, $.qualbinop, $.exp)),
-      prec.left(2, seq($.exp, $.exp)),
-      prec(3, seq('!', $.exp)),
-      prec(3, seq('-', $.exp)),
-      seq($.constructor, prec.left(1, repeat($.exp))),
-      // prec(0, seq($.exp, ':', $.type)),
+      prec.left(4, seq($.exp, $.qualbinop, $.exp)),
+      prec.left(4, seq($.exp, $.exp)),
+      prec.left(5, seq('!', $.exp)),
+      prec.left(6, seq('-', $.exp)),
+      prec.left(3, seq($.constructor, repeat($.exp))),
+      prec.left(2, seq($.exp, ':', $.type)),
       // seq($.exp, ':>', $.type),
       // seq($.exp, optional(seq('..', $.exp)), '...', $.exp),
       // seq($.exp, optional(seq('..', $.exp)), '..<', $.exp),

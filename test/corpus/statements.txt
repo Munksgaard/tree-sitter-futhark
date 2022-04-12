@@ -200,11 +200,14 @@ def foo = a b : i64
         (identifier))
       (exp
         (exp
-          (atom
-            (qualid
-              (identifier))))
-        (exp
-          (atom
-            (qualid
-              (identifier)))))))
-  (ERROR))
+          (exp
+            (atom
+              (qualid
+                (identifier))))
+          (exp
+            (atom
+              (qualid
+                (identifier)))))
+        (type
+          (qualid
+            (identifier)))))))
