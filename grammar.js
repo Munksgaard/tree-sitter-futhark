@@ -1,415 +1,186 @@
+const PREC = {
+  match: 2
+  seq: 3,
+  if: 4,
+  assign: 5,
+  prod: 6,
+  or: 7,
+  and: 8,
+  rel: 9,
+  bit: 10,
+  shift: 11,
+  concat: 12,
+  cons: 13,
+  add: 14,
+  mult: 15,
+  pow: 16,
+  neg: 17,
+  app: 18,
+  hash: 19,
+  dot: 20,
+  prefix: 21,
+}
+
+const OP_START_CHAR = /[!%&*+-/<=>^|]/
+const OP_CHAR = /[!%&*+-/<=>^|.]/
+const NUMBER = token(choice(
+  /[0-9][0-9_]*(\.[0-9_]*)?([eE][+\-]?[0-9][0-9_]*)?/,
+  /0[xX][0-9A-Fa-f][0-9A-Fa-f_]*(\.[0-9A-Fa-f_]*)?/,
+  /0[bB][01][01_]*/
+))
+
 module.exports = grammar({
   name: 'futhark',
 
   rules: {
-    source_file: $ => repeat($.dec),
+    source_file: $ => repeat($._declaration),
 
-    identifier: $ => /_?[A-Za-z][A-Za-z0-9_\']*/,
-
-    _quals: $ => repeat1(
-      seq($.identifier, '.')
+    _declaration: $ => choice(
+      $.value_bind,
     ),
 
-    qualid: $ => prec(9, choice(
-      $.identifier,
-      seq($._quals, $.identifier)
-    )),
-
-    binop: $ => prec.left(seq(
-      $.opstartchar,
-      repeat($.opchar)
-    )),
-
-    qualbinop: $ => choice(
-      $.binop,
-      seq($._quals, $.binop),
-      seq('`', $.qualid, '`')
-    ),
-
-    fieldid: $ => choice(
-      $._decimal,
-      $.identifier
-    ),
-
-    opstartchar: $ => choice(
-      '+',
-      '-',
-      '*',
-      '/',
-      '%',
-      '=',
-      '!',
-      '>',
-      '>',
-      '|',
-      '&',
-      '^'
-    ),
-
-    opchar: $ => choice(
-      $.opstartchar,
-      '.'
-    ),
-
-    constructor: $ => seq(
-      '#',
-      $.identifier
-    ),
-
-    literal: $ => choice(
-      $._intnumber,
-      $._floatnumber,
-      'true',
-      'false'
-    ),
-
-    int_type: $ => choice(
-      'i8',
-      'i16',
-      'i32',
-      'i64',
-      'u8',
-      'u16',
-      'u32',
-      'u64'
-    ),
-
-    float_type: $ => choice(
-      'f16',
-      'f32',
-      'f64'
-    ),
-
-    _intnumber: $ => seq(
-      choice($._decimal,
-             $._hexadecimal,
-             $._binary),
-      optional($.int_type)
-    ),
-
-    _decimal: $ => /[0-9][0-9_]*/,
-
-    _hexadecimal: $ => /0[xX][0-9a-fA-F][0-9a-fA-F_]*/,
-
-    _binary: $ => /0[bB][01][01_]*/,
-
-    _floatnumber: $ => seq(
-      choice($._pointfloat, $._exponentfloat, $._hexadecimalfloat),
-      optional($.float_type)
-    ),
-
-    _pointfloat: $ => prec(9, seq(
-      optional($._decimal),
-      $._fraction
-    )),
-
-    _exponentfloat: $ => seq(
-      choice($._decimal, $._pointfloat),
-      $._exponent
-    ),
-
-    _hexadecimalfloat: $ => seq(
-      /0[xX]/,
-      $._hexintpart,
-      $._hexfraction,
-      /[pP][\+\-]?[0-9]+/
-    ),
-
-    _fraction: $ => /\.[0-9][0-9_]*/,
-
-    _hexintpart: $ => /[0-9a-fA-F][0-9a-fA-F_]*/,
-
-    _hexfraction: $ => /.[0-9a-fA-F][0-9a-fA-F_]*/,
-
-    _exponent: $ => /[eE][\+\-]?[0-9]+/,
-
-    type: $ => choice(
-      $.qualid,
-      $.array_type,
-      $.tuple_type,
-      $.record_type,
-      $.sum_type,
-      $.function_type,
-      $.type_application,
-      $.existential_size
-    ),
-
-    tuple_type: $ => choice(
-      seq('(', ')'),
-      seq('(', $.type, repeat1(seq(',', $.type)), ')')
-    ),
-
-    array_type: $ => seq(
-      '[',
-      optional($.dim),
-      ']',
-      $.type
-    ),
-
-    dim: $ => choice(
-      $.qualid,
-      $._decimal
-    ),
-
-    sum_type: $ => prec.left(seq(
-      $.constructor,
-      repeat($.type),
-      repeat(seq('|',
-                 $.constructor,
-                 prec.left(repeat($.type))))
-    )),
-
-    record_type: $ => choice(
-      seq('{', '}'),
-      seq('{',
-          $.fieldid,
-          ':',
-          $.type,
-          repeat(seq(',',
-                     $.fieldid,
-                     ':',
-                     $.type)),
-          '}')
-    ),
-
-    type_application: $ => prec.left(3, choice(
-      seq($.type, $.type_arg),
-      seq('*', $.type)
-    )),
-
-    type_arg: $ => prec.left(choice(
-      seq('[', optional($.dim), ']'),
-      $.type
-    )),
-
-    function_type: $ => prec.right(seq(
-      $.param_type,
-      '->',
-      $.type
-    )),
-
-    param_type: $ => prec(2, choice(
-      $.type,
-      seq('(', $.identifier, ':', $.type, ')')
-    )),
-
-    stringlit: $ => token(
-      seq('"', repeat(choice(/[^"\\\n]/, seq("\\", /([^\n]|[0-9]+)/))), '"')
-    ),
-
-    charlit: $ => token(
-      seq('\'', repeat(choice(/[^'\\\n]/, seq("\\", /([^\n]|[0-9]+)/))), '\'')
-    ),
-
-    existential_size: $ => seq(
-      '?',
-      repeat1(seq('[', $.identifier, ']')),
-      '.',
-      $.type
-    ),
-
-    dec: $ => choice(
-      $.val_bind,
-      $.type_bind,
-      // $.mod_bind,
-      // $.mod_type_bind,
-      // seq('open', $.mod_exp),
-      // seq('import', $.stringlit),
-      // seq('local', $.dec),
-      // seq('#[', $.attr, ']', $.dec),
-    ),
-
-    val_bind: $ => seq(
+    value_bind: $ => seq(
       choice('def', 'entry', 'let'),
-      choice(
-        $.val_bind1,
-        $.val_bind2,
-      ),
-      optional(seq(':', $.type)),
-      '=',
-      $.exp,
-    ),
-
-    val_bind1: $ => prec(2, seq(
-      choice($.identifier, seq('(', $.binop, ')')),
-      repeat($.type_param),
+      $.identifier,
       repeat($.pat),
+      '=',
+      field('body', $._expression),
+    ),
+
+    pat: $ => $.identifier,
+
+    _atom: $ => choice(
+      $.identifier,
+      $.number,
+      seq('(', $._expression, ')'),
+    ),
+
+    _expression: $ => choice(
+      $._atom,
+      $.application_expression,
+      $.infix_expression,
+      $.sign_expression,
+    ),
+
+    application_expression: $ => prec.right(PREC.app, seq(
+      field('function', $._atom),
+      repeat1(field('argument', $._atom)),
     )),
 
-    val_bind2: $ => prec(0, seq(
-      $.pat,
-      $.binop,
-      $.pat,
+    unary_expression: $ => prec.left(PREC.neg, choice(
+      seq('-', $._expression),
+      seq('!', $._expression),
     )),
 
-    type_bind: $ => seq(
-      'type',
-      optional(choice('^', '~')),
-      $.identifier,
-      repeat($.type_param),
-      '=',
-      $.type
-    ),
+    prefix_operator: $ => token('!'),
 
-    type_param: $ => choice(
-      seq('[', $.identifier, ']'),
-      seq('\'', $.identifier),
-      seq('\'~', $.identifier),
-      seq('\'^', $.identifier)
-    ),
+    sign_operator: $ => '-',
 
-    atom: $ => prec.left(choice(
-      $.literal,
-      seq($.qualid, repeat(seq('.', $.fieldid))),
-      $.stringlit,
-      $.charlit,
-      seq('(', ')'),
-      seq('(', $.exp, ')', repeat(seq('.', $.fieldid))),
-      seq('(', $.exp, repeat(seq(',', $.exp)), ')'),
-      seq('{', '}'),
-      seq('{', $.field, repeat(seq(',', $.field)), '}'),
-      seq($.qualid, '[', $.index, repeat(seq(',', $.index)), ']'),
-      seq('(', $.exp, ')', '[', $.index, repeat(seq(',', $.index)), ']'),
-      seq($._quals, '.', '(', $.exp, ')'),
-      seq('[', $.exp, repeat(seq(',', $.exp)), ']'),
-      seq('[', $.exp, optional(seq('..', $.exp)), '...', $.exp, ']'),
-      seq('(', $.qualbinop, ')'),
-      seq('(', $.exp, $.qualbinop, ')'),
-      seq('(', $.qualbinop, $.exp, ')'),
-      seq('(', repeat1(seq('.', $.field)), ')'),
-      seq('(', '.', '[', $.index, repeat(seq(',', $.index)), ']', ')'),
+    prefix_expression: $ => prec(PREC.prefix, seq(
+      $.prefix_operator,
+      field('right', $._atom)
     )),
 
-    type_op: $ => choice(
-      ':',
-      ':>',
-    ),
-
-    exp: $ => choice(
-      $.atom,
-      prec.left(4, seq($.exp, $.qualbinop, $.exp)),
-      prec.left(4, seq($.exp, $.exp)),
-      prec.left(5, seq('!', $.exp)),
-      prec.left(6, seq('-', $.exp)),
-      prec.left(3, seq($.constructor, repeat($.exp))),
-      prec.left(2, seq($.exp, $.type_op, $.type)),
-      // seq($.exp, optional(seq('..', $.exp)), '...', $.exp),
-      // seq($.exp, optional(seq('..', $.exp)), '..<', $.exp),
-      // seq($.exp, optional(seq('..', $.exp)), '..>', $.exp),
-      // seq('if', $.exp, 'then', $.exp, 'else', $.exp),
-      // seq('let', repeat($.size), $.pat, '=', $.exp, 'in', $.exp),
-      // seq('let', $.identifier, '[', $.index, repeat(seq(',', $.index)), ']', '=', $.exp, 'in', $.exp),
-      // seq('let', $.identifier, repeat($.type_param), repeat1($.pat), optional(seq(':', $.type)), '=', $.exp, 'in', $.exp),
-      // seq('(', '\\', repeat1($.pat), optional(seq('=', $.exp)), $.loopform, 'do', $.exp),
-      // seq('#[', $.attr, ']', $.exp),
-      // seq('unsafe', $.exp),
-      // seq('assert', $.atom, $.atom),
-      // seq($.exp, 'with', '[', $.index, repeat(seq(',', $.index)), ']', '=', $.exp),
-      // seq($.exp, 'with', $.fieldid, repeat(seq('.', $.fieldid)), '=', $.exp),
-      // seq('match', $.exp, repeat1(seq('case', $.pat, '->', $.exp))),
-    ),
-
-    index: $ => $.literal,
-
-    loopform: $ => seq(
-      'for',
-      $.identifier,
-      '<',
-      $.exp,
-    ),
-
-    field: $ => choice(
-      seq($.fieldid, '=', $.exp),
-      $.identifier
-    ),
-
-    size: $ => seq(
-      '[', $.identifier, ']'
-    ),
-
-    pat: $ => prec.left(1, choice(
-      $.identifier,
-      $.pat_literal,
-      '_',
-      seq('(', ')'),
-      seq('(', $.pat, ')'),
-      seq('(', $.pat, repeat1(seq(',', $.pat)), ')'),
-      seq('{', '}'),
-      seq('{', $.fieldid, optional(seq('=', $.pat)), repeat(seq(',', $.fieldid, optional(seq('=', $.pat)))), '}'),
-      seq($.constructor, repeat($.pat)),
-      seq($.pat, ':', $.type),
-      seq('#[', $.attr, ']', $.pat),
+    sign_expression: $ => prec(PREC.neg, seq(
+      $.sign_operator,
+      field('right', $._expression)
     )),
 
-    pat_literal: $ => seq(
-      optional('-'),
-      $._intnumber,
+    infix_expression: $ => {
+      const table = [
+        {
+          operator: $._pow_operator,
+          precedence: PREC.pow,
+          associativity: 'right'
+        },
+        {
+          operator: $._mult_operator,
+          precedence: PREC.mult,
+          associativity: 'left'
+        },
+        {
+          operator: $._add_operator,
+          precedence: PREC.add,
+          associativity: 'left'
+        },
+        {
+          operator: $._concat_operator,
+          precedence: PREC.concat,
+          associativity: 'right'
+        },
+        {
+          operator: $._rel_operator,
+          precedence: PREC.rel,
+          associativity: 'left'
+        },
+        {
+          operator: $._and_operator,
+          precedence: PREC.and,
+          associativity: 'right'
+        },
+        {
+          operator: $._or_operator,
+          precedence: PREC.or,
+          associativity: 'right'
+        },
+        {
+          operator: $._assign_operator,
+          precedence: PREC.assign,
+          associativity: 'right'
+        }
+      ]
+
+      return choice(...table.map(({operator, precedence, associativity}) =>
+        prec[associativity](precedence, seq(
+          field('left', $._expression),
+          alias(operator, $.infix_operator),
+          field('right', $._expression)
+        ))
+      ))
+    },
+
+    _pow_operator: $ => choice(
+      token(seq('**', repeat(OP_CHAR))),
+      'lsl', 'lsr', 'asr'
     ),
 
-    mod_bind: $ => seq(
-      'module',
-      $.identifier,
-      repeat($.mod_param),
-      '=',
-      optional(seq(':', $.mod_type_exp)),
-      '=',
-      $.mod_exp,
+    _mult_operator: $ => choice(
+      token(seq(/[*/%]/, repeat(OP_CHAR))),
+      'mod', 'land', 'lor', 'lxor'
     ),
 
-    mod_param: $ => seq(
-      '(',
-      $.identifier,
-      ':',
-      $.mod_type_exp,
-      ')',
+    _add_operator: $ => choice(
+      '+', '-', '+.', '-.',
+      token(choice(
+        seq('+', repeat1(OP_CHAR)),
+        seq('-', choice(repeat1(/[!$%&*+\-./:<=?@^|~]/), repeat2(OP_CHAR)))
+      ))
     ),
 
-    mod_type_bind: $ => seq(
-      'module',
-      'type',
-      $.identifier,
-      '=',
-      $.mod_type_exp,
+    _concat_operator: $ => token(
+      seq(/[@^]/, repeat(OP_CHAR))
     ),
 
-    mod_exp: $ => choice(
-      $.qualid,
-      seq($.mod_exp, ':', $.mod_type_exp),
-      seq('\\', '(', $.identifier, ':', $.mod_type_exp, ')', optional(seq(':', $.mod_type_exp)), '->', $.mod_exp),
-      seq($.mod_exp, $.mod_exp),
-      seq('(', $.mod_exp, ')'),
-      seq('{', repeat($.dec), '}'),
-      seq('import', $.stringlit),
-    ),
+    _rel_operator: $ => token(choice(
+      seq(/[=>$]/, repeat(OP_CHAR)),
+      seq('<', choice(optional(/[!$%&*+./:<=>?@^|~]/), repeat2(OP_CHAR))),
+      seq('&', choice(/[!$%*+\-./:<=>?@^|~]/, repeat2(OP_CHAR))),
+      seq('|', choice(/[!$%&*+\-./:<=>?@^~]/, repeat2(OP_CHAR))),
+      '!='
+    )),
 
-    mod_type_exp: $ => choice(
-      $.qualid,
-      seq('{', repeat($.spec), '}'),
-      seq($.mod_type_exp, 'with', $.qualid, repeat($.type_param), '=', $.type),
-      seq('(', $.mod_type_exp, ')'),
-      seq('(', $.identifier, ':', $.mod_type_exp, ')', '->', $.mod_type_exp),
-      seq($.mod_type_exp, '->', $.mod_type_exp),
-    ),
+    _and_operator: $ => choice('&', '&&'),
 
-    spec: $ => choice(
-      seq('val', $.identifier, repeat($.type_param), ':', $.spec_type),
-      seq('val', $.binop, repeat($.type_param), ':', $.spec_type),
-      seq('type', optional('^'), $.identifier, repeat($.type_param), '=', $.type),
-      seq('type', optional('^'), $.identifier, repeat($.type_param)),
-      seq('module', $.identifier, ':', $.mod_type_exp),
-      seq('include', $.mod_type_exp),
-      seq('#[', $.attr, ']', $.spec),
-    ),
+    _or_operator: $ => choice('or', '||'),
 
-    spec_type: $ => choice(
-      $.type,
-      seq($.type, '->', $.spec_type),
-    ),
+    _assign_operator: $ => choice(':='),
 
-    attr: $ => choice(
-      $.identifier,
-      $._decimal,
-      seq($.identifier, '(', optional(seq($.attr, repeat(seq(',', $.attr)))), ')'),
-    ),
+    identifier: $ => /[a-z]+/,
+
+    number: $ => /\d+/,
   }
 });
+
+function repeat2(rule) {
+  return seq(rule, repeat1(rule))
+}
